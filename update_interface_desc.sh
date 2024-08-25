@@ -50,7 +50,7 @@ update_description() {
         descr_line="^#\s*$descr"
         if ! grep -q "$descr_line" $TEMP_FILE; then
             # Add the description to the interface definition
-            sed -i "/$pattern/a #$descr" $TEMP_FILE
+            sed -i "/$pattern/!b;n;c#$descr" $TEMP_FILE
             log "Added description '$descr' to $iface."
         else
             log "Description '$descr' already exists for $iface, skipping."
@@ -64,10 +64,13 @@ update_description() {
 while IFS= read -r line; do
     if [[ "$line" =~ Interface: ]]; then
         iface=$(echo "$line" | awk '{print $2}' | tr -d ',')
-    elif [[ "$line" =~ PortDescr: ]]; then
-        port_descr=$(echo "$line" | cut -d ' ' -f 2-)
-        log "Processing $iface with port description $port_descr."
-        update_description "$iface" "$port_descr"
+    elif [[ "$line" =~ SysName: ]]; then
+        port_descr=$(echo "$line" | awk '{print $2}')
+    elif [[ "$line" =~ PortID: ]]; then
+        port_descr2=$(echo "$line" | awk '{print $3}')
+        port_descr3=$(echo "Link to $port_descr - $port_descr2")
+        log "Processing $iface with port description $port_descr3."
+        update_description "$iface" "$port_descr3"
     fi
 done < <(lldpcli show neighbors)
 
